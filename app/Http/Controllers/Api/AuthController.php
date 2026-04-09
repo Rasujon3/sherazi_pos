@@ -15,54 +15,6 @@ use Illuminate\Support\Facades\RateLimiter;
 
 class AuthController extends AppBaseController
 {
-    public function register(StaffRequest $request)
-    {
-        DB::beginTransaction();
-        try {
-            // Handle file upload
-            $filePath = null;
-            if ($request->hasFile('image')) {
-                $filePath = storeFile($request->file('image'), 'profile_images', 'profileImage_');
-            }
-
-            $data = new User();
-            $data->name = $request->name;
-            $data->email = $request->email;
-            $data->phone = $request->phone;
-            $data->user_type_id = 3;
-            $data->role = 'service_provider';
-            $data->image = $filePath;
-            $data->password = $request->password;
-            $data->status = 'Active';
-            $data->save();
-
-            // Generate API token
-            $token = $data->createToken('flutter')->plainTextToken;
-
-            DB::commit();
-
-            return $this->sendResponse([
-                'success' => true,
-                'token' => $token,
-                'user' => $data,
-            ], 'User created successfully.');
-
-        } catch (Exception $e) {
-            DB::rollBack();
-
-            // Log the error
-            Log::error('Error in SP Register: ', [
-                'message' => $e->getMessage(),
-                'code' => $e->getCode(),
-                'line' => $e->getLine()
-            ]);
-
-            return response()->json([
-                'success' => false,
-                'message' => 'Something went wrong!!!',
-            ], 500);
-        }
-    }
     public function login(Request $request)
     {
         $request->validate([

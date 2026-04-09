@@ -3,18 +3,25 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ProductController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $products = Product::with('category') ->paginate(15);
+        $page = $request->get('page', 1);
+        $cacheKey = "products:list:page:{$page}";
 
-        return response()->json($products);
+        $products = Cache::remember($cacheKey, 300, function () {
+            return Product::with('category')->paginate(15);
+        });
+
+        return ProductResource::collection($products);
     }
 
     public function salesReport()
@@ -62,6 +69,12 @@ class ProductController extends Controller
         ]);
 
         $product = Product::create($request->all());
+
+        // Cache invalidation — clear all product list pages
+        $cachedPages = Cache::get('products:total_pages', 50);
+        for ($i = 1; $i <= $cachedPages; $i++) {
+            Cache::forget("products:list:page:{$i}");
+        }
 
         return response()->json($product, 201);
     }

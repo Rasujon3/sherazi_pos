@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\OrderResource;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Cache;
 
 class OrderController extends Controller
 {
@@ -49,14 +51,31 @@ class OrderController extends Controller
              return $order;
         });
 
+        // Cache invalidation — clear all order list pages
+        // Also clear products (stock changed during order)
+        $orderPages   = Cache::get('orders:total_pages', 50);
+        $productPages = Cache::get('products:total_pages', 50);
+
+        for ($i = 1; $i <= $orderPages; $i++) {
+            Cache::forget("orders:list:page:{$i}");
+        }
+        for ($i = 1; $i <= $productPages; $i++) {
+            Cache::forget("products:list:page:{$i}");
+        }
+
         return response()->json($order, 201);
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $orders = Order::with( 'customer', 'items' )->paginate(15);
+        $page = $request->get('page', 1);
+        $cacheKey = "orders:list:page:{$page}";
 
-        return response()->json($orders);
+        $orders = Cache::remember($cacheKey, 300, function () {
+            return Order::with('customer', 'items')->paginate(15);
+        });
+
+        return OrderResource::collection($orders);
     }
 
     public function filterByStatus(Request $request)
