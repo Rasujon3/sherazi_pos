@@ -12,40 +12,16 @@ class ProductController extends Controller
 {
     public function index()
     {
-        $products = Product::all();
+        $products = Product::with('category') ->paginate(15);
 
-        $result = [];
-        foreach ($products as $product) {
-            $result[] = [
-                'id'       => $product->id,
-                'name'     => $product->name,
-                'price'    => $product->price,
-                'stock'    => $product->stock,
-                'category' => $product->category->name,
-            ];
-        }
-
-        return response()->json($result);
+        return response()->json($products);
     }
 
     public function salesReport()
     {
-        $orders = Order::all();
+        $orders = Order::with([ 'customer', 'items.product' ])->paginate(15);
 
-        $report = [];
-        foreach ($orders as $order) {
-            foreach ($order->items as $item) {
-                $report[] = [
-                    'order_id'     => $order->id,
-                    'product_name' => $item->product->name,
-                    'qty'          => $item->quantity,
-                    'total'        => $item->quantity * $item->product->price,
-                    'customer'     => $order->customer->name,
-                ];
-            }
-        }
-
-        return response()->json($report);
+        return response()->json($orders);
     }
 
     public function dashboard()

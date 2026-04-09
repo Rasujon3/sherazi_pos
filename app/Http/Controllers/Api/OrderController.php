@@ -52,21 +52,9 @@ class OrderController extends Controller
 
     public function index()
     {
-        $orders = Order::all();
+        $orders = Order::with( 'customer', 'items' )->paginate(15);
 
-        $data = [];
-        foreach ($orders as $order) {
-            $data[] = [
-                'id'          => $order->id,
-                'customer'    => $order->customer->name,
-                'total'       => $order->total_amount,
-                'status'      => $order->status,
-                'items_count' => $order->items->count(),
-                'created_at'  => $order->created_at,
-            ];
-        }
-
-        return response()->json($data);
+        return response()->json($orders);
     }
 
     public function filterByStatus(Request $request)
