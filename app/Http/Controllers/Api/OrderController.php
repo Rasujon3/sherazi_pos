@@ -59,9 +59,13 @@ class OrderController extends Controller
 
     public function filterByStatus(Request $request)
     {
-        $status = $request->input('status');
+        $status = $request->validate([
+            'status' => 'required|in:pending,completed,cancelled'
+        ])['status'];
 
-        $orders = DB::select("SELECT * FROM orders WHERE status = '$status'");
+        $orders = Order::with('customer')
+            ->where('status', $status)
+            ->paginate(15);
 
         return response()->json($orders);
     }
