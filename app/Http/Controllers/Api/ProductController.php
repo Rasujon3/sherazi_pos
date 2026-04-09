@@ -26,15 +26,12 @@ class ProductController extends Controller
 
     public function dashboard()
     {
-        $totalProducts = Product::all()->count();
-        $totalOrders   = Order::all()->count();
-        $totalRevenue  = Order::all()->sum('total_amount');
+        $totalProducts = Product::count();
+        $totalOrders = Order::count();
+        $totalRevenue = Order::sum('total_amount');
         $categories    = Category::all();
 
-        $topProducts = Product::all()
-            ->sortByDesc('sold_count')
-            ->take(5)
-            ->values();
+        $topProducts = Product::orderByDesc('sold_count') ->limit(5)->get();
 
         return response()->json([
             'total_products' => $totalProducts,
