@@ -4,6 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use App\Http\Middleware\ForceJsonResponse;
@@ -75,5 +76,23 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        // ============================================
+        // Global API Exception Handler (IMPORTANT)
+        // ============================================
+        $exceptions->render(function (Throwable $e, Request $request) {
+            if ($request->is('api/*')) {
+                // Log the error
+                Log::error('Error in fetching data: ', [
+                    'message' => $e->getMessage(),
+                    'code' => $e->getCode(),
+                    'line' => $e->getLine()
+                ]);
+
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Something went wrong!!!',
+                ], 500);
+            }
+        });
     })
     ->create();
