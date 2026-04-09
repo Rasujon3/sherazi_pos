@@ -63,8 +63,13 @@ class AuthController extends AppBaseController
             ], 500);
         }
     }
-    public function SPLogin(StaffRequest $request)
+    public function login(Request $request)
     {
+        $request->validate([
+            'login' => 'required',
+            'password' => 'required|min:6',
+        ]);
+
         try {
             // Rate limiting to prevent brute-force attacks
             $key = 'login_attempts:' . $request->ip();

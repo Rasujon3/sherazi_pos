@@ -5,6 +5,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Auth\AuthenticationException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
 use App\Http\Middleware\ForceJsonResponse;
@@ -76,13 +77,23 @@ return Application::configure(basePath: dirname(__DIR__))
             }
         });
 
+        $exceptions->render(function (AuthenticationException $e, Request $request) {
+
+            if ($request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Please login to access this resource.',
+                ], 401);
+            }
+        });
+
         // ============================================
         // Global API Exception Handler (IMPORTANT)
         // ============================================
         $exceptions->render(function (Throwable $e, Request $request) {
             if ($request->is('api/*')) {
                 // Log the error
-                Log::error('Error in fetching data: ', [
+                Log::error('Error in Global API Exception Handler: ', [
                     'message' => $e->getMessage(),
                     'code' => $e->getCode(),
                     'line' => $e->getLine()
