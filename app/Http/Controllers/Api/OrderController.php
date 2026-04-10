@@ -51,17 +51,8 @@ class OrderController extends Controller
              return $order;
         });
 
-        // Cache invalidation — clear all order list pages
-        // Also clear products (stock changed during order)
-        $orderPages   = Cache::get('orders:total_pages', 50);
-        $productPages = Cache::get('products:total_pages', 50);
-
-        for ($i = 1; $i <= $orderPages; $i++) {
-            Cache::forget("orders:list:page:{$i}");
-        }
-        for ($i = 1; $i <= $productPages; $i++) {
-            Cache::forget("products:list:page:{$i}");
-        }
+        Cache::tags(['orders'])->flush();
+        Cache::tags(['products'])->flush();
 
         return response()->json($order, 201);
     }
@@ -69,9 +60,8 @@ class OrderController extends Controller
     public function index(Request $request)
     {
         $page = $request->get('page', 1);
-        $cacheKey = "orders:list:page:{$page}";
 
-        $orders = Cache::remember($cacheKey, 300, function () {
+        $orders = Cache::tags(['orders'])->remember("orders:list:page:{$page}", 300, function () {
             return Order::with('customer', 'items')->paginate(15);
         });
 

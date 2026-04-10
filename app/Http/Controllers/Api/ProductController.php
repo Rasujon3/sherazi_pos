@@ -15,9 +15,8 @@ class ProductController extends Controller
     public function index(Request $request)
     {
         $page = $request->get('page', 1);
-        $cacheKey = "products:list:page:{$page}";
 
-        $products = Cache::remember($cacheKey, 300, function () {
+        $products = Cache::tags(['products'])->remember("products:list:page:{$page}", 300, function () {
             return Product::with('category')->paginate(15);
         });
 
@@ -70,11 +69,7 @@ class ProductController extends Controller
 
         $product = Product::create($request->all());
 
-        // Cache invalidation — clear all product list pages
-        $cachedPages = Cache::get('products:total_pages', 50);
-        for ($i = 1; $i <= $cachedPages; $i++) {
-            Cache::forget("products:list:page:{$i}");
-        }
+        Cache::tags(['products'])->flush();
 
         return response()->json($product, 201);
     }
